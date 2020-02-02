@@ -365,26 +365,25 @@ double prevTime;
   /**
    * This function is called periodically during operator control.
    */
-  @Override
-  public void teleopPeriodic() {
-    double Leftjoy = leftjoy.getRawAxis(1);
-    double Rightjoy = rightjoy.getRawAxis(1);
-    boolean slowr = rightjoy.getRawButtonPressed(3);
-    boolean slowl = leftjoy.getRawButtonPressed(3);
-    //boolean fastr = rightjoy.getRawButtonPressed(1);
-    //boolean fastl = leftjoy.getRawButtonPressed(1);
 
-    adrive.tankDrive(-Leftjoy *.75, -Rightjoy*.75);
+public void turning(){
+ double camdr = 0;
+ double camdl = 0;
 
-    if(slowr || slowl){
-      Leftjoy = leftjoy.getRawAxis(1)*.25;
-      Rightjoy =rightjoy.getRawAxis(1)*.25;
-    }else{
-      Leftjoy = leftjoy.getRawAxis(1)*.75;
-      Rightjoy =rightjoy.getRawAxis(1)*.75;
+if(SmartDashboard.getData(synctestT) < 90){
+adrive.tankDrive(camdl, camdr+.5);
 
-    }
-  }
+}else if(SmartDashboard.getData(synctest) > 90){
+  adrive.tankDrive(camdl+.5, camdr);
+
+}else{
+  break;
+}
+
+}
+
+
+    
 
   public static double cubicScale (double input){
     return input*input*input;
