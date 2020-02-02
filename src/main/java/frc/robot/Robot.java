@@ -308,7 +308,7 @@ double prevTime;
     prevTime = System.currentTimeMillis();
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
-     leftt = 0.15;
+     leftt = 0.15; // Changes to  demonstrate git
     rightt = 0.15;
     
   }
