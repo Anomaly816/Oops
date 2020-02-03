@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive; 
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.util.Color;
@@ -323,8 +324,24 @@ double prevTime;
     rightt = 0.15;
     
   }
+  /*public double pidLoopThing(double kP, double kI, double kD, double setpoint, double input){
+    double pidValueReturn =0.0;
+    double integral = 0.0;
+    double error = 0.0;
+    double derivative = 0.0;
+    double prevError = 0.0;
 
-  /**
+
+    error = setpoint - input;
+    integral +=  (error*.02);
+    derivative = (error - prevError)/.02;
+    prevError = errorR;
+    pidValueReturn = kP*error + kI*integral + kD*derivative;
+
+    return pidValueReturn;
+  }*/
+
+    /**
    * This function is called periodically during autonomous.
    */
   @Override
@@ -336,11 +353,7 @@ double prevTime;
         break;
       case kDefaultAuto:
       default:
-        errorR = kAngleR - imu.getRate();
-        integralR +=  (errorR*.02);
-        derivativeR = (errorR - prevErrorR)/.02;
-        prevErrorR = errorR;
-        pidValueR = rkP*errorR + rkI*integralR + rkD*derivativeR;
+        
 
         error = kAngle - imu.getAngle();
         integral +=  (error*.02);
@@ -376,11 +389,13 @@ double prevTime;
   /**
    * This function is called periodically during operator control.
    */
-  double camdr = 0;
-  double camdl = 0;
+  double camdr = 0.0;
+  double camdl = 0.0;
 public void rotating(){ 
-  
+  PIDController visionPID = new PIDController(0.02, 0, 0);//0.0014, 0.0057, 0.000147
+  visionPID.setSetpoint(90.0);
   double posx;
+  double pidValue;
   //double areaballc;
   //int ballwidthc;
   //int ballheightc;
@@ -390,57 +405,74 @@ public void rotating(){
   //  ballwidthc = this.ballwidth;
    // ballheightc = this.ballheight;//hwere we are tyring to imipulate the data to turn the robot
   }
-
+  pidValue = visionPID.calculate(posx);
  /*if(posx > 3 && posx != 0){
 
 adrive.tankDrive(camdl, camdr);
 
 }*/
-  if(posx > 92 && posx <= 180){
+  if(posx > 0 && posx < 180){
     //System.out.println("Turn Right");
-    adrive.tankDrive(camdl+0.45, camdr-0.45);
-
-  }else if(posx < 88 && posx > 0){
-    //System.out.println("Turn Left");
-    adrive.tankDrive(camdl-0.45, camdr+0.45);
+    adrive.tankDrive(camdl+pidValue, camdr-pidValue);
   }else{
     //System.out.println("Where is it?");
     adrive.tankDrive(0, 0);
+    visionPID.close();
   }
-  SmartDashboard.putNumber("x pos", posx);
+  SmartDashboard.putNumber("x pos", pidValue);
 }
-double camdq = 0;
-double camdw = 0;
+
+
+double camdq = 0.0;
+double camdw = 0.0;
+
+
+
+
 public void movinginx(){
-  
-  double areaballf;
+  PIDController movingPID = new PIDController(0.02, 0, 0);
+
+  movingPID.setSetpoint(5700);
+
+
   int ballwidthf;
   int ballheightf;
-  synchronized(imgLock){
-    
-    areaballf = this.ballarea;
-    ballwidthf = this.ballwidth;
-    ballheightf = this.ballheight;//hwere we are tyring to imipulate the data to turn the robot
+    synchronized(imgLock){
+      ballwidthf = this.ballwidth;
+      ballheightf = this.ballheight;//hwere we are tyring to imipulate the data to turn the robot
   }
+  pidValue = movingPID.calculate(ballarea);
 
 
-if( ballheightf*ballwidthf < 6000 &&  ballheightf*ballwidthf >= 700){
-adrive.tankDrive(camdw+.5, camdq+.5);
-
-}else if(ballheightf*ballwidthf > 6100){
-  adrive.tankDrive(camdw-.5, camdq-.5);
-
-}else{
-  adrive.tankDrive(0, 0);
+  if(ballarea > 0 && ballarea < 180){
+    //System.out.println("Turn Right");
+    adrive.tankDrive(camdw+pidValue, camdq-pidValue);
+  }else{
+    //System.out.println("Where is it?");
+    adrive.tankDrive(0, 0);
+    movingPID.close();
+  }
+  SmartDashboard.putNumber("x pos", pidValue);
 }
 
-}
+
+/*if( ballheightf*ballwidthf < 5500 &&  ballheightf*ballwidthf >= 100){
+  adrive.tankDrive(camdw+.5, camdq+.5);
+  }else if(ballheightf*ballwidthf > 6000){
+    adrive.tankDrive(camdw-.5, camdq-.5);
+  }else if(ballheightf*ballwidthf < 6000 && ballheightf*ballwidthf > 5700){
+    adrive.tankDrive(0, 0);
+  }else{
+    adrive.tankDrive(0, 0);
+  }
+  */
+
     
 @Override
   public void teleopPeriodic() {
-    rotating(); 
+   // rotating(); 
     
-     // movinginx();
+     movinginx();
     
     
 
