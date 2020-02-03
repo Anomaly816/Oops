@@ -56,7 +56,12 @@ public class Robot extends TimedRobot {
   private int ballwidth;
   private int ballheight;
 
+boolean autommove;
 
+
+
+
+  
 
   double[] xVal;
   double[] defaultValue = new double[0];
@@ -119,7 +124,7 @@ double prevTime;
    */
   @Override
   public void robotInit() {
-    NetworkTableInstance inst = NetworkTableInstance.getDefault();
+   NetworkTableInstance inst = NetworkTableInstance.getDefault();
     NetworkTable table = inst.getTable("GRIP/816Blobs");
 
 
@@ -136,8 +141,14 @@ double prevTime;
           ballheight = r.height;
           synctest = r.x + (r.width/2);
         }
+      }else{
+        synchronized(imgLock){
+          ballarea = 0;
+          ballwidth = 0;
+          ballheight = 0;
+          synctest = 0;
       }
-      
+    }
     });
     visionThreadanom.start();
 
@@ -180,7 +191,7 @@ double prevTime;
       ballwidtha = this.ballwidth;
       ballheighta = this.ballheight;
     }
-    SmartDashboard.putNumber("x pos", synctestT);
+   
     
     SmartDashboard.putNumber("Ball Width", ballwidtha);
     SmartDashboard.putNumber("Ball Height", ballheighta);
@@ -365,27 +376,105 @@ double prevTime;
   /**
    * This function is called periodically during operator control.
    */
+  double camdr = 0;
+  double camdl = 0;
+public void rotating(){ 
+  
+  double posx;
+  //double areaballc;
+  //int ballwidthc;
+  //int ballheightc;
+  synchronized(imgLock){
+    posx = this.synctest;
+     //areaballc = this.ballarea;
+  //  ballwidthc = this.ballwidth;
+   // ballheightc = this.ballheight;//hwere we are tyring to imipulate the data to turn the robot
+  }
 
-public void turning(){
- double camdr = 0;
- double camdl = 0;
+ /*if(posx > 3 && posx != 0){
 
-if(SmartDashboard.getData(synctestT) < 90){
-adrive.tankDrive(camdl, camdr+.5);
+adrive.tankDrive(camdl, camdr);
 
-}else if(SmartDashboard.getData(synctest) > 90){
-  adrive.tankDrive(camdl+.5, camdr);
+}*/
+  if(posx > 92 && posx <= 180){
+    //System.out.println("Turn Right");
+    adrive.tankDrive(camdl+0.45, camdr-0.45);
+
+  }else if(posx < 88 && posx > 0){
+    //System.out.println("Turn Left");
+    adrive.tankDrive(camdl-0.45, camdr+0.45);
+  }else{
+    //System.out.println("Where is it?");
+    adrive.tankDrive(0, 0);
+  }
+  SmartDashboard.putNumber("x pos", posx);
+}
+double camdq = 0;
+double camdw = 0;
+public void movinginx(){
+  
+  double areaballf;
+  int ballwidthf;
+  int ballheightf;
+  synchronized(imgLock){
+    
+    areaballf = this.ballarea;
+    ballwidthf = this.ballwidth;
+    ballheightf = this.ballheight;//hwere we are tyring to imipulate the data to turn the robot
+  }
+
+
+if( ballheightf*ballwidthf < 6000 &&  ballheightf*ballwidthf >= 700){
+adrive.tankDrive(camdw+.5, camdq+.5);
+
+}else if(ballheightf*ballwidthf > 6100){
+  adrive.tankDrive(camdw-.5, camdq-.5);
 
 }else{
-  break;
+  adrive.tankDrive(0, 0);
 }
 
 }
-
-
+    
+@Override
+  public void teleopPeriodic() {
+    rotating(); 
+    
+     // movinginx();
+    
     
 
-  public static double cubicScale (double input){
+
+
+    /* double Joy_left = leftjoy.getRawAxis(1); //
+     double Joy_right = rightjoy.getRawAxis(1); //
+
+     boolean alignb = leftjoy.getRawButtonPressed(3);
+
+
+     
+      
+    
+
+    if (Within(Joy_left, -0.07, 0.07)) {
+      Joy_left = 0;
+    }
+    if (Within(Joy_right, -0.07, 0.07)) {
+      Joy_right = 0;
+    }
+
+    adrive.tankDrive(Joy_left, Joy_right);
+    
+    
+   
+  */
+  }
+  
+  private boolean Within(double joy_left, double d, double e) {
+    return false;
+  }
+
+  public static double cubicScale(double input) {
     return input*input*input;
   }
 
