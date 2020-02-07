@@ -10,7 +10,9 @@
 
 package frc.robot;
 
-import com.analog.adis16448.frc.ADIS16448_IMU;
+
+//import com.analog.adis16470.frc.ADIS16470_IMU;
+
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -53,12 +55,23 @@ public class Robot extends TimedRobot {
   VisionThread visionThreadanom;
   private final Object imgLock = new Object();
   private double synctest;
+  private double posy;
   private double ballarea;
   private int ballwidth;
   private int ballheight;
 
 boolean autommove;
 
+//Vision PID
+public double kSetpointV = 90.0;
+public static final double vkP = 0.005;
+public static final double vkI = 0;
+public static final double vkD = 0;
+public double prevErrorV = 0.0;
+public double integralV = 0.0;
+public double errorV = 0.0;
+public double derivativeV = 0.0;
+public double pidValueV = 0.0;
 
 
 
@@ -79,7 +92,7 @@ boolean autommove;
   private final Color kGreenTarget = ColorMatch.makeColor(0.197, 0.561, 0.240);
   private final Color kRedTarget = ColorMatch.makeColor(0.561, 0.232, 0.114);
   private final Color kYellowTarget = ColorMatch.makeColor(0.361, 0.524, 0.113);
-  public static final ADIS16448_IMU imu = new ADIS16448_IMU();
+  //public static final ADIS16470_IMU imu = new ADIS16470_IMU();
   public double kAngle = 0.0;
   public static final double kP = 0.01;
   public static final double kI = 0;
@@ -141,6 +154,7 @@ double prevTime;
           ballwidth = r.width;
           ballheight = r.height;
           synctest = r.x + (r.width/2);
+          posy = r.y +(r.height/2);
         }
       }else{
         synchronized(imgLock){
@@ -148,12 +162,16 @@ double prevTime;
           ballwidth = 0;
           ballheight = 0;
           synctest = 0;
+          posy = 0;
       }
+
     }
+    SmartDashboard.putNumber("X Pos", synctest);
+    SmartDashboard.putNumber("Y Pos", posy);
     });
     visionThreadanom.start();
 
-
+    
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
@@ -216,8 +234,8 @@ double prevTime;
     SmartDashboard.putNumber("Outake", outakeSensorVal);  
     SmartDashboard.putNumber("Proximity", proximity);
     
-    SmartDashboard.putNumber("SensorAngle", imu.getAngle());
-    SmartDashboard.putNumber("SensorAngleRate", imu.getRate());
+   // SmartDashboard.putNumber("SensorAngle", imu.getAngle());
+    //SmartDashboard.putNumber("SensorAngleRate", imu.getRate());
     SmartDashboard.putNumber("PID VALUE TOTAL", pidValueT);
 
     String colorString;
@@ -281,11 +299,11 @@ double prevTime;
     SmartDashboard.putNumber("Blue", detectedColor.blue);
     SmartDashboard.putNumber("Confidence", match.confidence);
     SmartDashboard.putString("Detected Color", colorString);
-    SmartDashboard.putNumber("BlueC",bluec);
-    SmartDashboard.putNumber("redc",redc);
-    SmartDashboard.putNumber("greenc",greenc);
-    SmartDashboard.putNumber("yellowc",yellowc);
-    SmartDashboard.putNumber("totalr",totalr);
+   // SmartDashboard.putNumber("BlueC",bluec);
+   // SmartDashboard.putNumber("redc",redc);
+    //SmartDashboard.putNumber("greenc",greenc);
+    //SmartDashboard.putNumber("yellowc",yellowc);
+   // SmartDashboard.putNumber("totalr",totalr);
 
     
 
@@ -355,7 +373,7 @@ double prevTime;
       default:
         
 
-        error = kAngle - imu.getAngle();
+        //error = kAngle - imu.getAngle();
         integral +=  (error*.02);
         derivative = (error - prevError)/.02;
         prevError = error;
@@ -391,35 +409,54 @@ double prevTime;
    */
   double camdr = 0.0;
   double camdl = 0.0;
-public void rotating(){ 
-  PIDController visionPID = new PIDController(0.02, 0, 0);//0.0014, 0.0057, 0.000147
-  visionPID.setSetpoint(90.0);
-  double posx;
+
+
+public double rotating(){ 
+  PIDController visionPID = new PIDController(0.003, 0.02, 000);//0.0014, 0.0057, 0.000147
+  
+  
+  visionPID.setSetpoint(70.0);
+  double Posx;
+ // double Posy;
   double pidValue;
   //double areaballc;
   //int ballwidthc;
   //int ballheightc;
   synchronized(imgLock){
-    posx = this.synctest;
-     //areaballc = this.ballarea;
-  //  ballwidthc = this.ballwidth;
-   // ballheightc = this.ballheight;//hwere we are tyring to imipulate the data to turn the robot
+    Posx = this.synctest;
+    //Posy = this.posy;
+    //areaballc = this.ballarea;
+    //ballwidthc = this.ballwidth;
+    //ballheightc = this.ballheight;//hwere we are tyring to imipulate the data to turn the robot
+    SmartDashboard.putNumber("New xPos", Posx);
   }
-  pidValue = visionPID.calculate(posx);
+
+  pidValue = visionPID.calculate(Posx);
+ 
  /*if(posx > 3 && posx != 0){
 
 adrive.tankDrive(camdl, camdr);
 
 }*/
-  if(posx > 0 && posx < 180){
-    //System.out.println("Turn Right");
-    adrive.tankDrive(camdl+pidValue, camdr-pidValue);
-  }else{
+    if(Posx > 10 && Posx < 170){
+      //System.out.println("Turn Right");
+        //adrive.tankDrive(camdl-pidValue, camdr+pidValue);
+        visionPID.close();
+        return pidValue;
+      }else {
+        //System.out.println("Turn Right");
+        visionPID.setSetpoint(0.0);
+        visionPID.close();
+        return 0.0;
+        //adrive.tankDrive(0, 0);
+    }
+    
     //System.out.println("Where is it?");
-    adrive.tankDrive(0, 0);
-    visionPID.close();
-  }
-  SmartDashboard.putNumber("x pos", pidValue);
+   
+    
+  
+ // SmartDashboard.putNumber("X Pos", Posx);
+  //SmartDashboard.putNumber("pidValue", pidValue);
 }
 
 
@@ -430,29 +467,26 @@ double camdw = 0.0;
 
 
 public void movinginx(){
-  PIDController movingPID = new PIDController(0.02, 0, 0);
-
-  movingPID.setSetpoint(5700);
-
-
-  int ballwidthf;
-  int ballheightf;
+  double Posy;
+  double pidValueR; 
     synchronized(imgLock){
-      ballwidthf = this.ballwidth;
-      ballheightf = this.ballheight;//hwere we are tyring to imipulate the data to turn the robot
+      
+      Posy = this.posy;
+      
   }
-  pidValue = movingPID.calculate(ballarea);
 
-
-  if(ballarea > 0 && ballarea < 180){
+  pidValueR = rotating();
+  if(Posy > 40 && Posy < 95){
     //System.out.println("Turn Right");
-    adrive.tankDrive(camdw+pidValue, camdq-pidValue);
-  }else{
+    adrive.tankDrive((camdw+.3-pidValueR)*1.2, (camdq+.3+pidValueR)*1.2);
+  }else if(Posy > 97 && Posy < 130) {
     //System.out.println("Where is it?");
+    adrive.tankDrive((camdw-.3-pidValueR)*1.2, (camdq-.3+pidValueR)*1.2);
+    
+  }else{
     adrive.tankDrive(0, 0);
-    movingPID.close();
   }
-  SmartDashboard.putNumber("x pos", pidValue);
+  //SmartDashboard.putNumber("x pos", pidValue);
 }
 
 
@@ -466,13 +500,12 @@ public void movinginx(){
     adrive.tankDrive(0, 0);
   }
   */
-
     
 @Override
   public void teleopPeriodic() {
-   // rotating(); 
+   //rotating(); 
     
-     movinginx();
+    movinginx();
     
     
 
