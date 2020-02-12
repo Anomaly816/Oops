@@ -23,6 +23,10 @@ import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.util.Color;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
+import edu.wpi.first.wpilibj.SpeedControllerGroup;
 
 import com.revrobotics.ColorSensorV3;
 
@@ -113,6 +117,22 @@ public double pidValueV = 0.0;
   public double derivativeR = 0.0;
   public double pidValueR = 0.0;
 
+  private static final int leftDeviceID = 14; 
+  private static final int rightDeviceID = 13;
+  private static final int leftDeviceID2 = 15; 
+  private static final int rightDeviceID2 = 16;
+
+
+  CANSparkMax m_leftfrount;
+  CANSparkMax m_rightfrount;
+  CANSparkMax m_leftback;
+  CANSparkMax m_rightback;
+
+  SpeedControllerGroup m_left;
+  SpeedControllerGroup m_right;
+
+
+
   public double pidValueT = 0.0;
 
 double leftt;
@@ -138,6 +158,39 @@ double prevTime;
    */
   @Override
   public void robotInit() {
+    CANSparkMax m_leftfrount = new CANSparkMax(leftDeviceID, MotorType.kBrushless);
+    CANSparkMax m_leftback = new CANSparkMax(leftDeviceID2, MotorType.kBrushless);
+ m_leftfrount.restoreFactoryDefaults();
+ m_leftback.restoreFactoryDefaults();
+ m_leftfrount.setInverted(true);
+ m_leftback.setInverted(true);
+  m_left = new SpeedControllerGroup(m_leftfrount, m_leftback);
+
+
+  m_leftfrount.setOpenLoopRampRate(.3);
+ m_leftback.setOpenLoopRampRate(.3);
+
+CANSparkMax m_rightfrount = new CANSparkMax(rightDeviceID, MotorType.kBrushless);
+CANSparkMax m_rightback = new CANSparkMax(rightDeviceID2, MotorType.kBrushless);
+m_rightfrount.restoreFactoryDefaults();
+m_rightback.restoreFactoryDefaults();
+m_rightback.setInverted(true);
+m_rightfrount.setInverted(true);
+ m_right = new SpeedControllerGroup(m_rightfrount, m_rightback);
+ 
+ m_rightfrount.setOpenLoopRampRate(.3);
+ m_rightback.setOpenLoopRampRate(.3);
+
+
+m_leftback.setSmartCurrentLimit(40);
+m_rightback.setSmartCurrentLimit(40);
+m_leftfrount.setSmartCurrentLimit(40);
+m_rightfrount.setSmartCurrentLimit(40);
+
+
+
+
+
    NetworkTableInstance inst = NetworkTableInstance.getDefault();
     NetworkTable table = inst.getTable("GRIP/816Blobs");
 
@@ -174,13 +227,12 @@ double prevTime;
     
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
-    SmartDashboard.putData("Auto choices", m_chooser);
+    SmartDashboard.putData("Auto choice", m_chooser);
 
-    Talon leftt = new Talon(1);
-    Talon rightt = new Talon(0);
-     leftjoy = new Joystick(1);
-     rightjoy =   new Joystick(0);
-    adrive = new DifferentialDrive(leftt, rightt);
+    
+     leftjoy = new Joystick(0);
+     rightjoy =   new Joystick(1);
+    adrive = new DifferentialDrive(m_left, m_right);
 
     m_colorMatcher.addColorMatch(kBlueTarget);
     m_colorMatcher.addColorMatch(kGreenTarget);
@@ -426,7 +478,8 @@ public double rotating(){
     Posx = this.synctest;
     //Posy = this.posy;
     //areaballc = this.ballarea;
-    //ballwidthc = this.ballwidth;
+    //ballwidthc = this.ballw.0
+    
     //ballheightc = this.ballheight;//hwere we are tyring to imipulate the data to turn the robot
     SmartDashboard.putNumber("New xPos", Posx);
   }
@@ -478,10 +531,10 @@ public void movinginx(){
   pidValueR = rotating();
   if(Posy > 40 && Posy < 95){
     //System.out.println("Turn Right");
-    adrive.tankDrive((camdw+.3-pidValueR)*1.2, (camdq+.3+pidValueR)*1.2);
+    adrive.tankDrive((camdw+.3-pidValueR)*.75, (camdq+.3+pidValueR)*.75);
   }else if(Posy > 97 && Posy < 130) {
     //System.out.println("Where is it?");
-    adrive.tankDrive((camdw-.3-pidValueR)*1.2, (camdq-.3+pidValueR)*1.2);
+    adrive.tankDrive((camdw-.3-pidValueR)*.75, (camdq-.3+pidValueR)*.75);
     
   }else{
     adrive.tankDrive(0, 0);
@@ -504,21 +557,28 @@ public void movinginx(){
 @Override
   public void teleopPeriodic() {
    //rotating(); 
-    
-    movinginx();
-    
+   movinginx();
     
 
 
 
-    /* double Joy_left = leftjoy.getRawAxis(1); //
+    double Joy_left = leftjoy.getRawAxis(1); //
      double Joy_right = rightjoy.getRawAxis(1); //
-
+/*
      boolean alignb = leftjoy.getRawButtonPressed(3);
+    
+
+
+     if(alignb){
+      
+     }else{
+      adrive.tankDrive(Joy_left, Joy_right);  
+
+     }
 
 
      
-      
+      */
     
 
     if (Within(Joy_left, -0.07, 0.07)) {
@@ -528,11 +588,11 @@ public void movinginx(){
       Joy_right = 0;
     }
 
-    adrive.tankDrive(Joy_left, Joy_right);
+    
     
     
    
-  */
+
   }
   
   private boolean Within(double joy_left, double d, double e) {
